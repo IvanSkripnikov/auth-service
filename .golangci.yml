@@ -21,14 +21,12 @@ linters-settings:
           - github.com/DATA-DOG/go-sqlmock
           - github.com/gavv/httpexpect/v2
           - github.com/go-sql-driver/mysql
-          - github.com/IvanSkripnikov/loyalty_system/components
-          - github.com/IvanSkripnikov/loyalty_system/config
-          - github.com/IvanSkripnikov/loyalty_system/controllers
-          - github.com/IvanSkripnikov/loyalty_system/database
-          - github.com/IvanSkripnikov/loyalty_system/helpers
-          - github.com/IvanSkripnikov/loyalty_system/logger
-          - github.com/IvanSkripnikov/loyalty_system/models
-          - github.com/IvanSkripnikov/loyalty_system/queue
+          - github.com/IvanSkripnikov/authenticator/config
+          - github.com/IvanSkripnikov/authenticator/controllers
+          - github.com/IvanSkripnikov/authenticator/database
+          - github.com/IvanSkripnikov/authenticator/helpers
+          - github.com/IvanSkripnikov/authenticator/logger
+          - github.com/IvanSkripnikov/authenticator/models
           - github.com/rabbitmq/amqp091-go
           - io
           - log

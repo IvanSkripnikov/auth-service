@@ -15,17 +15,15 @@ type route struct {
 
 var routes = []route{
 	// auth
-	newRoute(http.MethodGet, "/auth", controllers.Auth),
+	newRoute(http.MethodPost, "/register", controllers.Register),
+	newRoute(http.MethodPost, "/login", controllers.Login),
+	newRoute(http.MethodPost, "/auth", controllers.Auth),
+	newRoute(http.MethodGet, "/signin", controllers.SignIn),
+	newRoute(http.MethodPost, "/logout", controllers.Logout),
+	newRoute(http.MethodGet, "/sessions", controllers.Sessions),
 	// system
 	newRoute(http.MethodGet, "/health", controllers.HealthCheck),
 	// users
 	newRoute(http.MethodGet, "/v1/users/list", controllers.GetUsersListV1),
 	newRoute(http.MethodGet, "/v1/users/get/([0-9]+)", controllers.GetUserV1),
-	newRoute(http.MethodPost, "/v1/users/add-loyalty", controllers.AddLoyaltyV1),
-	newRoute(http.MethodDelete, "/v1/users/remove-loyalty", controllers.RemoveLoyaltyV1),
-	newRoute(http.MethodPost, "/v1/users/create", controllers.CreateUserV1),
-	newRoute(http.MethodPut, "/v1/users/update", controllers.UpdateUserV1),
-	newRoute(http.MethodDelete, "/v1/users/delete/([0-9]+)", controllers.BlockUserV1),
-	newRoute(http.MethodPost, "/v1/users/reset-password", controllers.ResetUserPasswordV1),
-	newRoute(http.MethodGet, "/v1/users/statistics", controllers.GetStatisticsV1),
 }
