@@ -2,6 +2,8 @@ package helpers
 
 import (
 	"net/http"
+	"strconv"
+	"time"
 
 	"authenticator/logger"
 	"authenticator/models"
@@ -75,11 +77,44 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	SendResponse(w, data, "/login", httpStatus)
 }
 
-func Auth(w http.ResponseWriter, _ *http.Request) {
-	data := ResponseData{
-		"auth": "OK",
+func Auth(w http.ResponseWriter, r *http.Request) {
+	var data ResponseData
+	var httpStatus int
+
+	cookie, err := r.Cookie("session_id")
+	if err != nil {
+		data = ResponseData{
+			"error": err.Error(),
+		}
+		httpStatus = http.StatusBadRequest
 	}
-	SendResponse(w, data, "/auth", http.StatusOK)
+
+	if cookie.Value != "" {
+		val, ok := SessionsMap[cookie.Value]
+		if ok {
+			data = ResponseData{
+				"data": val,
+			}
+			httpStatus = http.StatusOK
+			w.Header().Add("X-UserId", strconv.Itoa(val.ID))
+			w.Header().Add("X-User", val.UserName)
+			w.Header().Add("X-Email", val.Email)
+			w.Header().Add("X-First-Name", val.FirstName)
+			w.Header().Add("X-Last-Name", val.LastName)
+		} else {
+			data = ResponseData{
+				"error": "Not authorized",
+			}
+			httpStatus = http.StatusUnauthorized
+		}
+	} else {
+		data = ResponseData{
+			"error": "Not authorized",
+		}
+		httpStatus = http.StatusUnauthorized
+	}
+
+	SendResponse(w, data, "/auth", httpStatus)
 }
 
 func SignIn(w http.ResponseWriter, _ *http.Request) {
@@ -91,14 +126,21 @@ func SignIn(w http.ResponseWriter, _ *http.Request) {
 
 func Logout(w http.ResponseWriter, _ *http.Request) {
 	data := ResponseData{
-		"logout": "OK",
+		"status": "OK",
 	}
+	// задаём cookie
+	var cookie *http.Cookie
+	cookie.Expires = time.Now()
+	cookie.Name = "session_id"
+	cookie.Value = ""
+	http.SetCookie(w, cookie)
+
 	SendResponse(w, data, "/logout", http.StatusOK)
 }
 
 func Sessions(w http.ResponseWriter, _ *http.Request) {
 	data := ResponseData{
-		"sessions": "OK",
+		"sessions": SessionsMap,
 	}
 	SendResponse(w, data, "/sessions", http.StatusOK)
 }
