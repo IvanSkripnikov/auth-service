@@ -53,7 +53,7 @@ func GetUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	query := "SELECT id, username, first_name, last_name, email, phone, created, updated, active FROM users WHERE id = ? AND active = 1"
+	query := "SELECT id, username, password, first_name, last_name, email, phone, created, updated, active FROM users WHERE id = ? AND active = 1"
 	rows, err := DB.Prepare(query)
 
 	if checkError(w, err, category) {
@@ -64,7 +64,7 @@ func GetUser(w http.ResponseWriter, r *http.Request) {
 		_ = rows.Close()
 	}()
 
-	err = rows.QueryRow(user.ID).Scan(&user.ID, &user.UserName, &user.FirstName, &user.LastName, &user.Email, &user.Phone, &user.Created, &user.Updated, &user.Active)
+	err = rows.QueryRow(user.ID).Scan(&user.ID, &user.UserName, &user.Password, &user.FirstName, &user.LastName, &user.Email, &user.Phone, &user.Created, &user.Updated, &user.Active)
 	if checkError(w, err, category) {
 		return
 	}

@@ -26,6 +26,9 @@ func main() {
 		logger.Fatal(fmt.Sprintf("Cant initialize DB: %v", err))
 	}
 
+	// инициализация сессий
+	helpers.SessionsMap = map[string]models.User{}
+
 	// инициализация REST-api
 	httphandler.InitHTTPServer()
 

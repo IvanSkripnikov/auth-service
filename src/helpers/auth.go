@@ -1,6 +1,7 @@
 package helpers
 
 import (
+	"encoding/json"
 	"net/http"
 	"strconv"
 	"time"
@@ -13,20 +14,19 @@ var SessionsMap map[string]models.User
 
 func Register(w http.ResponseWriter, r *http.Request) {
 	// handle incoming params
-	rp := NewRequestParams(r, ParamsPost)
-	login := rp.GetString("login", true)
-	password := rp.GetString("password", true)
-	email := rp.GetString("email", true)
-	firstName := rp.GetString("first_name", true)
-	lastName := rp.GetString("last_name", true)
+	var user models.User
+	err := json.NewDecoder(r.Body).Decode(&user)
+	if checkError(w, err, "/register") {
+		return
+	}
 
 	// create user
-	id, err := registerUser(login, password, email, firstName, lastName)
-
 	var data ResponseData
 	var httpStatus int
+
+	id, err := registerUser(user.UserName, user.Password, user.Email, user.FirstName, user.LastName)
 	if err != nil {
-		logger.Fatalf("Can't register new user: %v", err)
+		logger.Errorf("Can't register new user: %v", err)
 		data = ResponseData{
 			"error": err.Error(),
 		}
@@ -43,13 +43,15 @@ func Register(w http.ResponseWriter, r *http.Request) {
 
 func Login(w http.ResponseWriter, r *http.Request) {
 	// handle incoming params
-	rp := NewRequestParams(r, ParamsPost)
-	login := rp.GetString("login", true)
-	password := rp.GetString("password", true)
+	var rp models.LoginParams
+	err := json.NewDecoder(r.Body).Decode(&rp)
+	if checkError(w, err, "/login") {
+		return
+	}
 
 	var data ResponseData
 	var httpStatus int
-	user, err := getUserByCredentionals(login, password)
+	user, err := getUserByCredentionals(rp.UserName, rp.Password)
 	if err != nil {
 		data = ResponseData{
 			"error": err.Error(),
@@ -61,10 +63,12 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		SessionsMap[sessionID] = user
 
 		// задаём cookie
-		var cookie *http.Cookie
-		cookie.HttpOnly = true
-		cookie.Name = "session_id"
-		cookie.Value = sessionID
+		cookie := &http.Cookie{
+			Name:     "session_id",
+			Value:    sessionID,
+			HttpOnly: true,
+		}
+
 		http.SetCookie(w, cookie)
 
 		// возвращаем ответ
@@ -129,10 +133,11 @@ func Logout(w http.ResponseWriter, _ *http.Request) {
 		"status": "OK",
 	}
 	// задаём cookie
-	var cookie *http.Cookie
-	cookie.Expires = time.Now()
-	cookie.Name = "session_id"
-	cookie.Value = ""
+	cookie := &http.Cookie{
+		Name:    "session_id",
+		Value:   "",
+		Expires: time.Now(),
+	}
 	http.SetCookie(w, cookie)
 
 	SendResponse(w, data, "/logout", http.StatusOK)
@@ -146,6 +151,7 @@ func Sessions(w http.ResponseWriter, _ *http.Request) {
 }
 
 func registerUser(username, password, email, firstName, lastName string) (int, error) {
+	logger.Infof("parameters: %v,  %v,  %v,  %v,  %v", username, password, email, firstName, lastName)
 	query := "INSERT INTO users (username, first_name, last_name, email, password, created, updated) VALUES (?, ?, ?, ?, ?, ?, ?)"
 	currentTimestamp := GetCurrentTimestamp()
 	rows, err := DB.Query(query, username, firstName, lastName, email, password, currentTimestamp, currentTimestamp)
@@ -170,6 +176,7 @@ func registerUser(username, password, email, firstName, lastName string) (int, e
 func getUserByCredentionals(username, password string) (models.User, error) {
 	var whereCondition string
 	var user models.User
+	logger.Debugf("Login params: %v %v", username, password)
 
 	if len(password) == 0 {
 		whereCondition = " username = ?"
@@ -177,7 +184,7 @@ func getUserByCredentionals(username, password string) (models.User, error) {
 		whereCondition = " username = ? AND password = ?"
 	}
 
-	query := "SELECT id, username, first_name, last_name, email, phone, created, updated, active FROM users WHERE" + whereCondition
+	query := "SELECT id, username, first_name, last_name, email, phone, created, updated, active FROM users WHERE " + whereCondition
 	userRow, err := DB.Prepare(query)
 
 	defer func() {
@@ -189,7 +196,7 @@ func getUserByCredentionals(username, password string) (models.User, error) {
 	} else {
 		err = userRow.QueryRow(username, password).Scan(&user.ID, &user.UserName, &user.FirstName, &user.LastName, &user.Email, &user.Phone, &user.Created, &user.Updated, &user.Active)
 	}
-
+	logger.Debugf("Query result: %v %v", err, user)
 	if err != nil {
 		return user, err
 	}
