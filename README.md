@@ -6,7 +6,6 @@ This repository is of authenticator service
 
 Method | Path        | Description                                   |                                                                         
 ---    |-------------|------------------------------------------------
-GET    | `/health`   | Health page                                   |
 POST   | `/register` | Регистрация нового пользователя               |
 POST   | `/login`    | Логин пользователя                            |
 POST   | `/auth`     | Авторизация пользователя                      |

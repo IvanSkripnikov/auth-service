@@ -29,6 +29,6 @@ func LoadConfig() (*Config, error) {
 func GetRequiredVariables() []string {
 	return []string{
 		// Обязательные переменные окружения для подключения к БД сервиса
-		// "DB_ADDRESS", "DB_PORT", "DB_USER", "DB_PASSWORD", "DB_NAME",
+		"DB_ADDRESS", "DB_PORT", "DB_USER", "DB_PASSWORD", "DB_NAME",
 	}
 }
