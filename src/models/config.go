@@ -6,7 +6,8 @@ import (
 )
 
 type Config struct {
-	Database Database
+	Database          Database
+	BillingServiceUrl string
 }
 
 func LoadConfig() (*Config, error) {
@@ -23,6 +24,7 @@ func LoadConfig() (*Config, error) {
 			Password: os.Getenv("DB_PASSWORD"),
 			DB:       os.Getenv("DB_NAME"),
 		},
+		BillingServiceUrl: os.Getenv("BILLING_SERViCE_URL"),
 	}, nil
 }
 
@@ -30,5 +32,8 @@ func GetRequiredVariables() []string {
 	return []string{
 		// Обязательные переменные окружения для подключения к БД сервиса
 		"DB_ADDRESS", "DB_PORT", "DB_USER", "DB_PASSWORD", "DB_NAME",
+
+		// Обязательные переменные для редиректа в сервис авторизации
+		"BILLING_SERViCE_URL",
 	}
 }

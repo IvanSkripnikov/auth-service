@@ -1,6 +1,7 @@
 package helpers
 
 import (
+	"bytes"
 	"encoding/json"
 	"net/http"
 	"strconv"
@@ -32,10 +33,20 @@ func Register(w http.ResponseWriter, r *http.Request) {
 		}
 		httpStatus = http.StatusBadRequest
 	} else {
-		data = ResponseData{
-			"register": id,
+		// create user account
+		err = createUserAccount(id)
+		if err != nil {
+			logger.Errorf("Can't register user account: %v", err)
+			data = ResponseData{
+				"error": err.Error(),
+			}
+			httpStatus = http.StatusBadRequest
+		} else {
+			data = ResponseData{
+				"register": id,
+			}
+			httpStatus = http.StatusOK
 		}
-		httpStatus = http.StatusOK
 	}
 
 	SendResponse(w, data, "/register", httpStatus)
@@ -202,4 +213,20 @@ func getUserByCredentionals(username, password string) (models.User, error) {
 	}
 
 	return user, nil
+}
+
+func createUserAccount(id int) error {
+	newAccount := models.Account{UserID: id, Balance: 0}
+	jsonData, err := json.Marshal(newAccount)
+	if err != nil {
+		return err
+	}
+	// Отправляем POST-запрос
+	resp, err := http.Post(Config.BillingServiceUrl+"/v1/account/create", "application/json", bytes.NewBuffer(jsonData))
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	return nil
 }

@@ -19,6 +19,7 @@ func main() {
 	if err != nil {
 		logger.Fatal(fmt.Sprintf("Config error: %v", err))
 	}
+	helpers.InitConfig(config)
 
 	// настройка коннекта к БД
 	_, err = helpers.InitDataBase(config.Database)

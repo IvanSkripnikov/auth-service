@@ -9,6 +9,12 @@ import (
 	"authenticator/models"
 )
 
+var Config *models.Config
+
+func InitConfig(cfg *models.Config) {
+	Config = cfg
+}
+
 func GetCurrentTimestamp() int64 {
 	return time.Now().Unix()
 }
