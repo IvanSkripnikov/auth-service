@@ -1,11 +1,13 @@
 package main
 
 import (
+	"fmt"
+
 	"authenticator/helpers"
 	"authenticator/httphandler"
-	"authenticator/logger"
 	"authenticator/models"
-	"fmt"
+
+	logger "github.com/IvanSkripnikov/go-logger"
 )
 
 func main() {

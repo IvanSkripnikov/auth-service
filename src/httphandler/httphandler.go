@@ -8,7 +8,8 @@ import (
 	"time"
 
 	"authenticator/helpers"
-	"authenticator/logger"
+
+	logger "github.com/IvanSkripnikov/go-logger"
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )

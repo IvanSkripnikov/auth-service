@@ -7,8 +7,9 @@ import (
 	"strconv"
 	"time"
 
-	"authenticator/logger"
 	"authenticator/models"
+
+	logger "github.com/IvanSkripnikov/go-logger"
 )
 
 var SessionsMap map[string]models.User

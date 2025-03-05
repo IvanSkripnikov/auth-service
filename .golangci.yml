@@ -25,9 +25,8 @@ linters-settings:
           - github.com/IvanSkripnikov/authenticator/controllers
           - github.com/IvanSkripnikov/authenticator/database
           - github.com/IvanSkripnikov/authenticator/helpers
-          - github.com/IvanSkripnikov/authenticator/logger
           - github.com/IvanSkripnikov/authenticator/models
-          - github.com/rabbitmq/amqp091-go
+          - github.com/IvanSkripnikov/go-logger
           - io
           - log
           - math

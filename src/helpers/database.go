@@ -8,7 +8,7 @@ import (
 
 	_ "github.com/go-sql-driver/mysql"
 
-	"authenticator/logger"
+	logger "github.com/IvanSkripnikov/go-logger"
 )
 
 const migrationsDir = "./migrations"
