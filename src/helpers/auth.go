@@ -26,7 +26,7 @@ func Register(w http.ResponseWriter, r *http.Request) {
 	var data ResponseData
 	var httpStatus int
 
-	id, err := registerUser(user.UserName, user.Password, user.Email, user.FirstName, user.LastName)
+	id, err := registerUser(user.UserName, user.Password, user.Email, user.FirstName, user.LastName, user.Phone)
 	if err != nil {
 		logger.Errorf("Can't register new user: %v", err)
 		data = ResponseData{
@@ -162,11 +162,10 @@ func Sessions(w http.ResponseWriter, _ *http.Request) {
 	SendResponse(w, data, "/sessions", http.StatusOK)
 }
 
-func registerUser(username, password, email, firstName, lastName string) (int, error) {
-	logger.Infof("parameters: %v,  %v,  %v,  %v,  %v", username, password, email, firstName, lastName)
-	query := "INSERT INTO users (username, first_name, last_name, email, password, created, updated) VALUES (?, ?, ?, ?, ?, ?, ?)"
-	currentTimestamp := GetCurrentTimestamp()
-	rows, err := DB.Query(query, username, firstName, lastName, email, password, currentTimestamp, currentTimestamp)
+func registerUser(username, password, email, firstName, lastName, phone string) (int, error) {
+	logger.Infof("parameters: %v,  %v,  %v,  %v,  %v, %v", username, password, email, firstName, lastName, phone)
+	query := "INSERT INTO users (username, first_name, last_name, email, password, phone) VALUES (?, ?, ?, ?, ?, ?)"
+	rows, err := DB.Query(query, username, firstName, lastName, email, password)
 
 	if err != nil {
 		return 0, err
