@@ -15,6 +15,10 @@ func InitConfig(cfg *models.Config) {
 	Config = cfg
 }
 
+func GetCurrentDate() string {
+	return time.Now().Format("2006-01-02 15:04:05")
+}
+
 func GetCurrentTimestamp() int64 {
 	return time.Now().Unix()
 }
@@ -29,7 +33,7 @@ func FormatResponse(w http.ResponseWriter, httpStatus int, category string) {
 }
 
 func GenerateSessionID(user models.User) string {
-	str := time.Now().Format("YYYY-mm-dd_H:i:s") + user.UserName
+	str := time.Now().Format("YYYY-mm-dd_H:i:s") + user.Username
 
 	hasher := md5.New()
 	hasher.Write([]byte(str))

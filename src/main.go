@@ -24,10 +24,7 @@ func main() {
 	helpers.InitConfig(config)
 
 	// настройка коннекта к БД
-	_, err = helpers.InitDataBase(config.Database)
-	if err != nil {
-		logger.Fatal(fmt.Sprintf("Cant initialize DB: %v", err))
-	}
+	helpers.InitDatabase(config.Database)
 
 	// инициализация сессий
 	helpers.SessionsMap = map[string]models.User{}

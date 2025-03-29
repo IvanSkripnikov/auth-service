@@ -2,44 +2,29 @@ package helpers
 
 import (
 	"database/sql"
-	"fmt"
 
 	"authenticator/models"
 
 	_ "github.com/go-sql-driver/mysql"
+	"gorm.io/gorm"
 
-	logger "github.com/IvanSkripnikov/go-logger"
+	"github.com/IvanSkripnikov/go-gormdb"
+	"github.com/IvanSkripnikov/go-logger"
 )
 
-const migrationsDir = "./migrations"
-
-type DataBaseConnection struct {
-	host     string
-	db       string
-	user     string
-	password string
-}
-
 var DB *sql.DB
+var GormDB *gorm.DB
 
-// InitDataBase подключение к БД сервиса
-func InitDataBase(config models.Database) (*sql.DB, error) {
-	dataSource := GetDatabaseConnectionString(config)
-	db, err := sql.Open("mysql", dataSource)
-
+func InitDatabase(config gormdb.Database) {
+	gormDatabase, err := gormdb.AddMysql(models.ServiceDatabase, config)
 	if err != nil {
-		logger.Fatalf("Failed to connect to service database. Error: %v", err)
-		return nil, err
+		logger.Fatalf("Cant initialize DB: %v", err)
+	}
+	db, err := gormDatabase.DB()
+	if err != nil {
+		logger.Fatalf("Cant get DB: %v", err)
 	}
 
 	DB = db
-
-	return db, nil
-}
-
-func GetDatabaseConnectionString(config models.Database) string {
-	connectionString := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s",
-		config.User, config.Password, config.Address, config.Port, config.DB)
-	logger.Info(connectionString)
-	return connectionString
+	GormDB = gormdb.GetClient(models.ServiceDatabase)
 }

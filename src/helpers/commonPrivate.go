@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	logger "github.com/IvanSkripnikov/go-logger"
+	"gorm.io/gorm"
 )
 
 func getIDFromRequestString(url string) (int, error) {
@@ -22,17 +23,17 @@ func checkError(w http.ResponseWriter, err error, category string) bool {
 		logger.Errorf("Runtime error %s", err.Error())
 
 		var data ResponseData
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, sql.ErrNoRows) || errors.Is(err, gorm.ErrRecordNotFound) {
 			w.WriteHeader(http.StatusNotFound)
 			httpStatusCode = http.StatusNotFound
 			data = ResponseData{
-				"error": "Data not found",
+				"response": "Data not found",
 			}
 		} else {
 			httpStatusCode = http.StatusInternalServerError
 			w.WriteHeader(http.StatusInternalServerError)
 			data = ResponseData{
-				"error": "Internal error",
+				"response": "Internal error",
 			}
 		}
 

@@ -1,5 +1,10 @@
 package models
 
+const Success = "success"
+const Failure = "failure"
+
+const ServiceDatabase = "AuthService"
+
 type Database struct {
 	Address  string
 	Port     int

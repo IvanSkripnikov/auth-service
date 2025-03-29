@@ -9,88 +9,90 @@ import (
 
 	"authenticator/models"
 
-	logger "github.com/IvanSkripnikov/go-logger"
+	"github.com/IvanSkripnikov/go-logger"
 )
 
 var SessionsMap map[string]models.User
 
 func Register(w http.ResponseWriter, r *http.Request) {
-	// handle incoming params
+	category := "/register"
 	var user models.User
 	err := json.NewDecoder(r.Body).Decode(&user)
-	if checkError(w, err, "/register") {
+	if checkError(w, err, category) {
 		return
 	}
+
+	user.Created = GetCurrentDate()
+	user.Updated = GetCurrentDate()
+	user.Active = 1
+	user.CategoryID = 1
 
 	// create user
 	var data ResponseData
 	var httpStatus int
 
-	id, err := registerUser(user.UserName, user.Password, user.Email, user.FirstName, user.LastName, user.Phone)
+	err = GormDB.Create(&user).Error
+	if checkError(w, err, category) {
+		return
+	}
+
+	// create user account
+	err = createUserAccount(user.ID)
 	if err != nil {
-		logger.Errorf("Can't register new user: %v", err)
+		logger.Errorf("Can't register user account: %v", err)
 		data = ResponseData{
-			"error": err.Error(),
+			"response": err.Error(),
 		}
 		httpStatus = http.StatusBadRequest
 	} else {
-		// create user account
-		err = createUserAccount(id)
-		if err != nil {
-			logger.Errorf("Can't register user account: %v", err)
-			data = ResponseData{
-				"error": err.Error(),
-			}
-			httpStatus = http.StatusBadRequest
-		} else {
-			data = ResponseData{
-				"register": id,
-			}
-			httpStatus = http.StatusOK
+		data = ResponseData{
+			"response": user.ID,
 		}
+		httpStatus = http.StatusOK
 	}
 
-	SendResponse(w, data, "/register", httpStatus)
+	SendResponse(w, data, category, httpStatus)
 }
 
 func Login(w http.ResponseWriter, r *http.Request) {
+	category := "/login"
 	// handle incoming params
 	var rp models.LoginParams
 	err := json.NewDecoder(r.Body).Decode(&rp)
-	if checkError(w, err, "/login") {
+	if checkError(w, err, category) {
 		return
 	}
 
 	var data ResponseData
 	var httpStatus int
-	user, err := getUserByCredentionals(rp.UserName, rp.Password)
-	if err != nil {
-		data = ResponseData{
-			"error": err.Error(),
-		}
-		httpStatus = http.StatusUnauthorized
-	} else {
-		// записываем сессию
-		sessionID := GenerateSessionID(user)
-		SessionsMap[sessionID] = user
+	var user models.User
 
-		// задаём cookie
-		cookie := &http.Cookie{
-			Name:     "session_id",
-			Value:    sessionID,
-			HttpOnly: true,
-		}
+	err = GormDB.Where(&models.User{Username: rp.Username, Password: rp.Password}).First(&user).Error
+	if checkError(w, err, category) {
+		return
+	}
+	user.Password = ""
 
-		http.SetCookie(w, cookie)
+	// записываем сессию
+	sessionID := GenerateSessionID(user)
+	SessionsMap[sessionID] = user
 
-		// возвращаем ответ
-		data = ResponseData{
-			"status": "OK",
-		}
-		httpStatus = http.StatusOK
+	// задаём cookie
+	cookie := &http.Cookie{
+		Name:     "session_id",
+		Value:    sessionID,
+		HttpOnly: true,
 	}
 
-	SendResponse(w, data, "/login", httpStatus)
+	http.SetCookie(w, cookie)
+
+	// возвращаем ответ
+	data = ResponseData{
+		"response": models.Success,
+	}
+	httpStatus = http.StatusOK
+
+	SendResponse(w, data, category, httpStatus)
 }
 
 func Auth(w http.ResponseWriter, r *http.Request) {
@@ -100,7 +102,7 @@ func Auth(w http.ResponseWriter, r *http.Request) {
 	cookie, err := r.Cookie("session_id")
 	if err != nil {
 		data = ResponseData{
-			"error": err.Error(),
+			"response": "Error: " + err.Error(),
 		}
 		httpStatus = http.StatusBadRequest
 	}
@@ -113,7 +115,7 @@ func Auth(w http.ResponseWriter, r *http.Request) {
 			}
 			httpStatus = http.StatusOK
 			w.Header().Add("X-UserId", strconv.Itoa(val.ID))
-			w.Header().Add("X-User", val.UserName)
+			w.Header().Add("X-User", val.Username)
 			w.Header().Add("X-Email", val.Email)
 			w.Header().Add("X-First-Name", val.FirstName)
 			w.Header().Add("X-Last-Name", val.LastName)
@@ -160,59 +162,6 @@ func Sessions(w http.ResponseWriter, _ *http.Request) {
 		"sessions": SessionsMap,
 	}
 	SendResponse(w, data, "/sessions", http.StatusOK)
-}
-
-func registerUser(username, password, email, firstName, lastName, phone string) (int, error) {
-	logger.Infof("parameters: %v,  %v,  %v,  %v,  %v, %v", username, password, email, firstName, lastName, phone)
-	query := "INSERT INTO users (username, first_name, last_name, email, password, phone) VALUES (?, ?, ?, ?, ?, ?)"
-	rows, err := DB.Query(query, username, firstName, lastName, email, password)
-
-	if err != nil {
-		return 0, err
-	}
-
-	defer func() {
-		_ = rows.Close()
-		_ = rows.Err()
-	}()
-
-	user, err := getUserByCredentionals(username, "")
-	if err != nil {
-		return 0, err
-	}
-
-	return user.ID, nil
-}
-
-func getUserByCredentionals(username, password string) (models.User, error) {
-	var whereCondition string
-	var user models.User
-	logger.Debugf("Login params: %v %v", username, password)
-
-	if len(password) == 0 {
-		whereCondition = " username = ?"
-	} else {
-		whereCondition = " username = ? AND password = ?"
-	}
-
-	query := "SELECT id, username, first_name, last_name, email, phone, created, updated, active FROM users WHERE " + whereCondition
-	userRow, err := DB.Prepare(query)
-
-	defer func() {
-		_ = userRow.Close()
-	}()
-
-	if len(password) == 0 {
-		err = userRow.QueryRow(username).Scan(&user.ID, &user.UserName, &user.FirstName, &user.LastName, &user.Email, &user.Phone, &user.Created, &user.Updated, &user.Active)
-	} else {
-		err = userRow.QueryRow(username, password).Scan(&user.ID, &user.UserName, &user.FirstName, &user.LastName, &user.Email, &user.Phone, &user.Created, &user.Updated, &user.Active)
-	}
-	logger.Debugf("Query result: %v %v", err, user)
-	if err != nil {
-		return user, err
-	}
-
-	return user, nil
 }
 
 func createUserAccount(id int) error {
